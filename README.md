@@ -44,15 +44,6 @@
 
 &nbsp;
 
-<img src="assets/chat4.png" alt="报告生成" width="85%">
-
-*图4. 报告生成 — 用户使用数据汇总分析*
-
-&nbsp;
-
-<img src="assets/chat5.png" alt="完整对话" width="85%">
-
-*图5. 完整多轮对话效果*
 
 </div>
 
@@ -155,7 +146,7 @@ python -c "from rag.vector_store import VectorStoreService; VectorStoreService()
 streamlit run app.py
 ```
 
-浏览器自动打开 **http://localhost:8501**。
+浏览器自动打开  http://localhost:8501
 
 ### 验证运行
 
