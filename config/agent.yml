@@ -1,1 +1,3 @@
-external_data_path: data/external/records.csv
+# Agent 配置文件（科研论文问答系统）
+llm_timeout: 120                    # LLM 调用超时 (秒)
+llm_max_retries: 3                  # LLM 调用最大重试次数
