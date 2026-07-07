@@ -5,6 +5,7 @@
 import json
 import os
 import time
+from datetime import datetime
 from langchain_core.tools import tool
 from rag.rag_service import RagSummarizeService
 from agent.retrieval import OnlineRetrievalPipeline
@@ -14,7 +15,57 @@ from utils.logger_handler import logger
 rag = RagSummarizeService()
 online_pipeline = OnlineRetrievalPipeline()
 
+KB_MISSING_PAPERS_PATH = get_abs_path("data/kb_missing_papers.json")
 KB_MISSING_INDEX_PATH = get_abs_path("data/kb_missing_index.json")
+
+
+def _load_kb_missing_papers() -> dict:
+    """加载 kb_missing_papers.json → 返回 papers 字典"""
+    if not os.path.exists(KB_MISSING_PAPERS_PATH):
+        return {}
+    with open(KB_MISSING_PAPERS_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("papers", {})
+
+
+def _save_kb_missing_papers(papers: dict):
+    """保存 kb_missing_papers.json"""
+    os.makedirs(os.path.dirname(KB_MISSING_PAPERS_PATH), exist_ok=True)
+    with open(KB_MISSING_PAPERS_PATH, "w", encoding="utf-8") as f:
+        json.dump({"papers": papers}, f, ensure_ascii=False, indent=2)
+
+
+def _auto_index_online_papers(papers: list, local_docs: list | None = None):
+    """在线搜索结果自动写入 kb_missing_papers.json（仅当本地 KB 未命中且尚未索引）"""
+    if local_docs:
+        return  # 本地 KB 已有，跳过
+    existing = _load_kb_missing_papers()
+    updated = False
+    for p in papers:
+        title_lower = p.title.strip().lower()
+        already_exists = any(
+            title_lower in k or k in title_lower
+            for k in existing.keys()
+        )
+        if already_exists:
+            continue
+        existing[title_lower] = {
+            "display_name": p.title,
+            "online_query": p.title,
+            "authors": p.authors,
+            "year": p.year,
+            "venue": p.venue,
+            "doi": p.doi,
+            "url": p.url,
+            "abstract": (p.abstract or "")[:500],
+            "status": "auto_indexed",
+            "verified": False,
+            "added_at": datetime.now().isoformat(),
+        }
+        logger.info(f"[AutoIndex] 已写入 kb_missing: {p.title[:80]}")
+        updated = True
+    if updated:
+        _save_kb_missing_papers(existing)
 
 # ── 共享状态（由 ReactAgent.execute_stream() 注入）──
 _shared_state: dict = {
@@ -96,6 +147,14 @@ def search_academic_papers(query: str) -> str:
     start = time.time()
     result = online_pipeline.run(query)
     _log_tool_result("search_academic_papers", result, start)
+
+    # Auto-index online results
+    if not result.startswith("未找到"):
+        try:
+            papers = online_pipeline.client.search(query, max_results=20)
+            _auto_index_online_papers(papers)
+        except Exception:
+            pass
 
     # 标记在线搜索结果已获取
     ref = _shared_state["retrieval_ref"][0]
@@ -205,11 +264,14 @@ def compare_papers(titles_str: str) -> str:
                 content_preview = doc.page_content[:200].replace("\n", " ")
                 results.append(f"  - 来源: {src} | 章节: {sec}")
                 results.append(f"    内容: {content_preview}...")
+            if len(local_docs) >= 3:
+                continue
         else:
             results.append("[本地KB] 未找到相关片段")
 
         papers = online_pipeline.client.search(title, max_results=3)
         if papers:
+            _auto_index_online_papers(papers, local_docs=local_docs)
             p = papers[0]
             results.append(f"[在线] {p.title} | {', '.join(p.authors[:3]) if p.authors else ''} | {p.year} | {p.source}")
             if p.abstract:

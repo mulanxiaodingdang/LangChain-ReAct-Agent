@@ -210,8 +210,11 @@ class RagSummarizeService:
 
     def retriever_docs(self, query: str, section_filter: str | None = None) -> list[Document]:
         """混合检索 → RRF 融合(50) → Reranker 精排(8)"""
+        logger.info(f"[Retrieve] 原始query: {query[:200]}")
         rewritten = self._rewrite_query(query)
         rewritten = self._translate_query(rewritten)
+        if rewritten != query:
+            logger.info(f"[Retrieve] 改写后query: {rewritten[:200]}")
         docs = self.hybrid_retriever.retrieve(rewritten, section_filter=section_filter)
         docs = self.reranker.rerank(rewritten, docs)
         for i, doc in enumerate(docs, 1):

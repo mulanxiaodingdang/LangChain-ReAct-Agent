@@ -3,6 +3,7 @@ import json
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Generator
 
@@ -123,10 +124,13 @@ class ReactAgent:
         for key, paper in papers.items():
             display = (paper.get("display_name") or "").lower()
             if subj_lower in key or key in subj_lower or subj_lower in display:
+                logger.info(f"[KBMissing] 命中: {subject} → {paper.get('display_name', key)}")
                 return paper
             for alias in paper.get("aliases", []):
                 if subj_lower in alias.lower() or alias.lower() in subj_lower:
+                    logger.info(f"[KBMissing] 命中(alias): {subject} → {paper.get('display_name', key)}")
                     return paper
+        logger.info(f"[KBMissing] 未命中: {subject}")
         return None
 
     # ── Candidate Extraction ──
@@ -205,14 +209,21 @@ class ReactAgent:
             if chunk.content and isinstance(chunk.content, str):
                 judgment += chunk.content
 
-        paper_hit = "PAPER_HIT: YES" in judgment.upper() or "PAPER_HIT:YES" in judgment.upper()
-        sufficient = "SUFFICIENT" in judgment.upper() and "INSUFFICIENT" not in judgment.upper()
+        judgment_clean = judgment.strip().rstrip("*").rstrip()
 
-        m_missing = re.search(r"INSUFFICIENT:\s*(.+?)(?:\n|$)", judgment, re.IGNORECASE)
-        missing_dimensions = m_missing.group(1).strip() if m_missing else ""
+        paper_hit = "PAPER_HIT: YES" in judgment_clean.upper() or "PAPER_HIT:YES" in judgment_clean.upper()
+        sufficient = "SUFFICIENT" in judgment_clean.upper() and "INSUFFICIENT" not in judgment_clean.upper()
 
-        m_refine = re.search(r"REFINE_QUERY:\s*(.+?)(?:\n|$)", judgment, re.IGNORECASE)
-        refine_query = m_refine.group(1).strip() if m_refine else f"{subject} {aspects}"
+        m_missing = re.search(r"INSUFFICIENT:\s*(.+?)(?:\n|$)", judgment_clean, re.IGNORECASE)
+        missing_dimensions = m_missing.group(1).strip().rstrip("*").rstrip() if m_missing else ""
+
+        # 用 _llm_rewrite_query 根据缺失维度生成改写检索词，而非从 LLM 输出正则提取
+        if not sufficient and paper_hit and missing_dimensions:
+            refine_query = self._llm_rewrite_query(
+                f"论文「{subject}」的对比维度：{aspects}。当前检索缺失：{missing_dimensions}"
+            )
+        else:
+            refine_query = f"{subject} {aspects}"
 
         return {
             "sufficient": sufficient,
@@ -471,8 +482,10 @@ class ReactAgent:
         # Step 0: KB 缺失预检
         missing = self._match_kb_missing(subject if subject else query)
         if missing:
+            logger.info(f"[QA] KB缺失命中 → 在线检索")
             online_q = missing.get("online_query") or missing.get("display_name", query)
             online_result = search_academic_papers.invoke({"query": online_q})
+            logger.info(f"[QA] 在线检索完成 ({len(online_result)} chars)")
             self.callback.tool_invocation_log.append({
                 "name": "search_academic_papers", "output": online_result,
                 "elapsed": 0, "status": "success",
@@ -487,6 +500,7 @@ class ReactAgent:
 
         # Round 1: 本地检索
         issued.add(query)
+        logger.info(f"[QA] Round1 检索query: {query[:200]}")
         try:
             docs1 = rag.retriever_docs(query)
         except Exception:
@@ -498,6 +512,11 @@ class ReactAgent:
         yield {"type": "tool", "content": preview1, "name": "academic_search"}
 
         all_chunks = list(docs1)
+        quality1 = rag._check_retrieval_quality(query, docs1)
+        logger.info(
+            f"[Quality] Round1 soft_miss={quality1['is_soft_miss']} "
+            f"signals={quality1['signals']} max_score={quality1['max_score']:.3f} coverage={quality1['coverage']:.2f}"
+        )
 
         # Round 1: LLM judge
         judge1 = yield from self._llm_judge_chunks(all_chunks, query)
@@ -510,6 +529,7 @@ class ReactAgent:
         refine_query = judge1.get("refine_query", query)
         if refine_query and refine_query != query and refine_query not in issued:
             issued.add(refine_query)
+            logger.info(f"[QA] Round2 检索query: {refine_query[:200]}")
             try:
                 docs2 = rag.retriever_docs(refine_query)
             except Exception:
@@ -527,6 +547,12 @@ class ReactAgent:
                     all_chunks.append(d)
                     seen.add(d.page_content[:120])
 
+            quality2 = rag._check_retrieval_quality(refine_query, docs2)
+            logger.info(
+                f"[Quality] Round2 soft_miss={quality2['is_soft_miss']} "
+                f"signals={quality2['signals']} max_score={quality2['max_score']:.3f} coverage={quality2['coverage']:.2f}"
+            )
+
         # Round 2: 再次 judge
         judge2 = yield from self._llm_judge_chunks(all_chunks, query)
         if judge2["sufficient"]:
@@ -534,13 +560,37 @@ class ReactAgent:
             self._log_session_end("qa")
             return
 
-        # Round 3: 在线兜底
-        online_result = search_academic_papers.invoke({"query": query})
-        self.callback.tool_invocation_log.append({
-            "name": "search_academic_papers", "output": online_result, "elapsed": 0, "status": "success",
-        })
-        yield {"type": "tool", "content": online_result[:200], "name": "search_academic_papers"}
-        online_context = f"[在线检索补充]\n{online_result}"
+        # Round 3: 在线兜底（优先用 kb_missing 摘要/论文名，而非自然语言问句）
+        missing = self._match_kb_missing(subject if subject else query)
+        if missing and missing.get("abstract"):
+            # 有摘要 → 跳过在线检索，直接使用预存元数据
+            display = missing.get("display_name", subject)
+            logger.info(f"[QA] kb_missing有摘要，跳过在线检索: {display}")
+            ctx_parts = [f"[在线检索] 论文「{display}」不在本地 KB 中，以下为预存元数据："]
+            ctx_parts.append(f"摘要：{missing['abstract'][:500]}")
+            if missing.get("url"):
+                ctx_parts.append(f"链接：{missing['url']}")
+            if missing.get("authors"):
+                ctx_parts.append(f"作者：{', '.join(missing['authors'][:5])}")
+            if missing.get("year"):
+                ctx_parts.append(f"年份：{missing['year']}")
+            online_context = "\n".join(ctx_parts)
+            yield {"type": "tool", "content": online_context[:200], "name": "kb_missing_abstract"}
+        else:
+            # 用论文名/model name 搜索，不用自然语言问句
+            if missing:
+                online_q = missing.get("online_query") or missing.get("display_name", subject)
+                logger.info(f"[QA] kb_missing命中，在线检索query: {online_q}")
+            else:
+                online_q = rag._translate_query(query)
+                logger.info(f"[QA] 在线兜底（无kb_missing），翻译query: {online_q}")
+            online_result = search_academic_papers.invoke({"query": online_q})
+            logger.info(f"[QA] 在线检索结果 ({len(online_result)} chars): {online_result[:300]}")
+            self.callback.tool_invocation_log.append({
+                "name": "search_academic_papers", "output": online_result, "elapsed": 0, "status": "success",
+            })
+            yield {"type": "tool", "content": online_result[:200], "name": "search_academic_papers"}
+            online_context = f"[在线检索补充]\n{online_result}"
 
         yield from self._generate_answer_from_chunks(
             judge2["relevant_chunks"], query, Intent.QA, extra_context=online_context, max_chunks=15, max_tokens=5000
@@ -552,6 +602,109 @@ class ReactAgent:
         logger.warning(f"[SessionEnd] intent={intent_name} tools={tools_count}")
 
     # ── COMPARE Pipeline (逐 subject 检索 → 独立 judge → 两轮上限 → 15 chunk 均衡分配) ──
+
+    def _process_compare_subject(self, subject: str, aspects: str) -> dict:
+        """处理单个 subject 的检索+judge（线程安全，不 yield）"""
+        from rag.rag_service import RagSummarizeService
+        rag = RagSummarizeService()
+
+        result: dict = {
+            "subject": subject,
+            "chunks": [],
+            "online_context": "",
+            "chunk_count": 0,
+            "tool_logs": [],
+            "tool_previews": [],
+        }
+
+        # Step 0: KB 缺失预检
+        missing = self._match_kb_missing(subject)
+        if missing:
+            if missing.get("abstract"):
+                display = missing.get("display_name", subject)
+                logger.info(f"[Compare] {subject} kb_missing有摘要，跳过在线检索")
+                ctx = f"[在线] 「{display}」不在本地 KB：\n摘要：{missing['abstract'][:500]}"
+                if missing.get("url"):
+                    ctx += f"\n链接：{missing['url']}"
+                if missing.get("authors"):
+                    ctx += f"\n作者：{', '.join(missing['authors'][:5])}"
+                result["online_context"] = ctx
+                return result
+
+            online_q = missing.get("online_query") or missing.get("display_name", subject)
+            logger.info(f"[Compare] {subject} KB缺失，在线检索query: {online_q}")
+            online_result = search_academic_papers.invoke({"query": online_q})
+            logger.info(f"[Compare] {subject} 在线检索完成 ({len(online_result)} chars)")
+            result["tool_logs"].append({
+                "name": "search_academic_papers", "output": online_result,
+                "elapsed": 0, "status": "success",
+            })
+            result["tool_previews"].append({"type": "tool", "content": online_result[:200], "name": "search_academic_papers"})
+            display = missing.get("display_name", subject)
+            ctx = f"[在线] 「{display}」不在本地 KB：\n{online_result}"
+            if missing.get("abstract"):
+                ctx += f"\n摘要：{missing['abstract'][:300]}"
+            result["online_context"] = ctx
+            return result
+
+        # Round 1: subject + aspects 检索
+        search_query = f"{subject} {aspects}"
+        try:
+            docs1 = rag.retriever_docs(search_query)
+        except Exception:
+            docs1 = []
+        preview1 = docs1[0].page_content[:200] if docs1 else ""
+        result["tool_logs"].append({
+            "name": "academic_search", "output": preview1, "elapsed": 0, "status": "success",
+        })
+        result["tool_previews"].append({"type": "tool", "content": preview1, "name": "academic_search"})
+
+        # 逐 subject judge
+        judge = self._judge_subject_evidence(docs1, subject, aspects)
+        logger.info(
+            f"[SubjectJudge] {subject} paper_hit={judge['paper_hit']} "
+            f"sufficient={judge['sufficient']} missing={judge['missing_dimensions']}"
+        )
+
+        if judge["sufficient"]:
+            result["chunks"] = list(docs1)
+            result["chunk_count"] = len(docs1)
+            return result
+
+        # 未命中目标论文 → 在线检索
+        if not judge["paper_hit"]:
+            logger.info(f"[Compare] {subject} 本地未命中 → 在线检索query: {subject}")
+            online_result = search_academic_papers.invoke({"query": subject})
+            result["tool_logs"].append({
+                "name": "search_academic_papers", "output": online_result,
+                "elapsed": 0, "status": "success",
+            })
+            result["tool_previews"].append({"type": "tool", "content": online_result[:200], "name": "search_academic_papers"})
+            result["online_context"] = f"[在线] 「{subject}」本地检索未命中：\n{online_result}"
+            return result
+
+        # 命中但证据不足 → Round 2: 改写重试
+        refine_q = judge.get("refine_query", f"{subject} {aspects}")
+        try:
+            docs2 = rag.retriever_docs(refine_q)
+        except Exception:
+            docs2 = []
+        preview2 = docs2[0].page_content[:200] if docs2 else ""
+        result["tool_logs"].append({
+            "name": "academic_search", "output": preview2, "elapsed": 0, "status": "success",
+        })
+        result["tool_previews"].append({"type": "tool", "content": preview2, "name": "academic_search"})
+
+        # 合并两轮 chunk（去重）
+        merged = list(docs1)
+        seen_contents = {d.page_content[:120] for d in docs1}
+        for d in docs2:
+            if d.page_content[:120] not in seen_contents:
+                merged.append(d)
+                seen_contents.add(d.page_content[:120])
+        result["chunks"] = merged
+        result["chunk_count"] = len(merged)
+        return result
 
     def _execute_compare_pipeline(self, query: str) -> Generator[dict, None, None]:
         from rag.rag_service import RagSummarizeService
@@ -569,84 +722,30 @@ class ReactAgent:
         online_contexts: list[str] = []
         subject_chunk_count: dict[str, int] = {}  # 记录每个 subject 已有 chunk 数
 
-        for subject in candidates[:4]:
-            subject_chunk_count[subject] = 0
-
-            # Step 0: KB 缺失预检
-            missing = self._match_kb_missing(subject)
-            if missing:
-                online_q = missing.get("online_query") or missing.get("display_name", subject)
-                online_result = search_academic_papers.invoke({"query": online_q})
-                self.callback.tool_invocation_log.append({
-                    "name": "search_academic_papers", "output": online_result,
-                    "elapsed": 0, "status": "success",
-                })
-                yield {"type": "tool", "content": online_result[:200], "name": "search_academic_papers"}
-                display = missing.get("display_name", subject)
-                ctx = f"[在线] 「{display}」不在本地 KB：\n{online_result}"
-                if missing.get("abstract"):
-                    ctx += f"\n摘要：{missing['abstract'][:300]}"
-                online_contexts.append(ctx)
-                continue
-
-            # Round 1: subject + aspects 检索
-            search_query = f"{subject} {aspects}"
-            try:
-                docs1 = rag.retriever_docs(search_query)
-            except Exception:
-                docs1 = []
-            preview1 = docs1[0].page_content[:200] if docs1 else ""
-            self.callback.tool_invocation_log.append({
-                "name": "academic_search", "output": preview1, "elapsed": 0, "status": "success",
-            })
-            yield {"type": "tool", "content": preview1, "name": "academic_search"}
-
-            # 逐 subject judge
-            judge = self._judge_subject_evidence(docs1, subject, aspects)
-            logger.info(
-                f"[SubjectJudge] {subject} paper_hit={judge['paper_hit']} "
-                f"sufficient={judge['sufficient']} missing={judge['missing_dimensions']}"
-            )
-
-            if judge["sufficient"]:
+        # 并行处理所有 subject
+        with ThreadPoolExecutor(max_workers=min(3, len(candidates[:4]))) as executor:
+            futures = {
+                executor.submit(self._process_compare_subject, subject, aspects): subject
+                for subject in candidates[:4]
+            }
+            for future in as_completed(futures):
+                subj_result = future.result()
+                subject = subj_result["subject"]
+                # yield tool previews
+                for preview in subj_result["tool_previews"]:
+                    yield preview
+                # merge tool logs
+                self.callback.tool_invocation_log.extend(subj_result["tool_logs"])
+                # merge online context
+                if subj_result["online_context"]:
+                    online_contexts.append(subj_result["online_context"])
+                # merge chunks (dedup)
                 seen = {d.page_content[:120] for d in all_chunks}
-                for d in docs1:
+                for d in subj_result["chunks"]:
                     if d.page_content[:120] not in seen:
                         all_chunks.append(d)
                         seen.add(d.page_content[:120])
-                        subject_chunk_count[subject] += 1
-                continue
-
-            # 未命中目标论文 → 在线检索
-            if not judge["paper_hit"]:
-                online_result = search_academic_papers.invoke({"query": subject})
-                self.callback.tool_invocation_log.append({
-                    "name": "search_academic_papers", "output": online_result,
-                    "elapsed": 0, "status": "success",
-                })
-                yield {"type": "tool", "content": online_result[:200], "name": "search_academic_papers"}
-                online_contexts.append(f"[在线] 「{subject}」本地检索未命中：\n{online_result}")
-                continue
-
-            # 命中但证据不足 → Round 2: 改写重试
-            refine_q = judge.get("refine_query", f"{subject} {aspects}")
-            try:
-                docs2 = rag.retriever_docs(refine_q)
-            except Exception:
-                docs2 = []
-            preview2 = docs2[0].page_content[:200] if docs2 else ""
-            self.callback.tool_invocation_log.append({
-                "name": "academic_search", "output": preview2, "elapsed": 0, "status": "success",
-            })
-            yield {"type": "tool", "content": preview2, "name": "academic_search"}
-
-            # 合并两轮 chunk（去重），不再 judge，硬上限已到
-            seen = {d.page_content[:120] for d in all_chunks}
-            for d in docs1 + docs2:
-                if d.page_content[:120] not in seen:
-                    all_chunks.append(d)
-                    seen.add(d.page_content[:120])
-                    subject_chunk_count[subject] += 1
+                subject_chunk_count[subject] = subj_result["chunk_count"]
 
         if not all_chunks and not online_contexts:
             yield {"type": "text", "content": "[系统] 未检索到任何相关文献。", "name": "system"}
@@ -696,9 +795,15 @@ class ReactAgent:
 
         for doc in chunks:
             title = (doc.metadata.get("paper_title", "") or "").lower()
+            content = doc.page_content.lower()
             matched = None
             for subj in subject_keys:
-                if subj.lower() in title:
+                subj_lower = subj.lower()
+                if subj_lower in title:
+                    matched = subj
+                    break
+                # fallback: chunk 内容包含 subject 关键词（如 BTD 出现在正文中）
+                if subj_lower in content:
                     matched = subj
                     break
             if matched:
@@ -751,10 +856,12 @@ class ReactAgent:
         # 2. LLM judge chunks
         judge_result = yield from self._llm_judge_chunks(docs, query)
 
-        # 3. 不足则在线补充
+        # 3. 不足则在线补充（翻译为英文检索词）
         extra_context = ""
         if not judge_result["sufficient"]:
-            online_result = search_academic_papers.invoke({"query": query})
+            english_q = rag._translate_query(query)
+            logger.info(f"[Review] 在线检索query: {english_q}")
+            online_result = search_academic_papers.invoke({"query": english_q})
             self.callback.tool_invocation_log.append({
                 "name": "search_academic_papers", "output": online_result, "elapsed": 0, "status": "success",
             })
