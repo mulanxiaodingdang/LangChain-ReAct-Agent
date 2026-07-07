@@ -1,0 +1,145 @@
+{
+  "papers": {
+    "binbert: binary code understanding with a fine-tunable and execution-aware transformer": {
+      "display_name": "BinBert: Binary Code Understanding With a Fine-Tunable and Execution-Aware Transformer",
+      "aliases": [
+        "binbert binary code understanding",
+        "binbert"
+      ],
+      "added_at": "2026-06-24T22:08:18.314208"
+    },
+    "graphbert": {
+      "display_name": "GraphBERT",
+      "aliases": [
+        "graphbert binary code understanding"
+      ],
+      "added_at": "2026-06-28T19:10:55.572741"
+    },
+    "degpt": {
+      "display_name": "DeGPT",
+      "aliases": [
+        "degpt decompilation"
+      ],
+      "added_at": "2026-06-28T19:10:55.573528"
+    },
+    "dnd: a cross-architecture deep neural network decompiler": {
+      "display_name": "DnD: A Cross-Architecture Deep Neural Network Decompiler",
+      "aliases": [],
+      "added_at": "2026-06-28T21:18:15.495619",
+      "online_query": "\"DnD: A Cross-Architecture Deep Neural Network Decompiler\""
+    },
+    "structsplat: generalizable 3d gaussian splatting from uncalibrated sparse views": {
+      "display_name": "StructSplat: Generalizable 3D Gaussian Splatting from Uncalibrated Sparse Views",
+      "aliases": [],
+      "online_query": "StructSplat: Generalizable 3D Gaussian Splatting from Uncalibrated Sparse Views",
+      "added_at": "2026-06-29T18:45:03.471695"
+    },
+    "perceptionrubrics": {
+      "display_name": "PerceptionRubrics: Calibrating Multimodal Evaluation to Human Perception",
+      "aliases": [
+        "10.48550/arxiv.2606.28322"
+      ],
+      "online_query": "PerceptionRubrics: Calibrating Multimodal Evaluation to Human Perception",
+      "added_at": "2026-06-29T18:56:41.014278",
+      "authors": [
+        "Yana Wei",
+        "Hongbo Peng",
+        "Yanlin Lai",
+        "L Zhao",
+        "Kangheng Lin",
+        "En Yu",
+        "Keyu Lv",
+        "Han Zhou",
+        "Yin Tang",
+        "Haodong Li",
+        "Mitt Huang",
+        "Hangyu Guo",
+        "J F Sun",
+        "Zheng Ge",
+        "Xiangyu Zhang",
+        "Daxin Jiang",
+        "Vishal M. Patel"
+      ],
+      "year": 2026,
+      "venue": "arXiv (Cornell University)",
+      "doi": "10.48550/arxiv.2606.28322",
+      "url": "https://arxiv.org/abs/2606.28322",
+      "abstract": "We introduce PerceptionRubrics, a rubric-based evaluation framework that addresses the gap between saturated benchmark scores and real-world brittleness. Shifting evaluation from holistic semantic matching to rigorous atomic auditing, PerceptionRubrics pairs 1,038 information-dense images with over 10,000 instance-specific rubrics. These criteria are derived from golden captions constructed via a novel Circular Peer-Review consensus pipeline and then distilled into a dual-stream system of Must-Right (essential facts) and Easy-Wrong (fine-grained details) rubrics. Crucially, PerceptionRubrics implements a Gated Scoring mechanism: unlike linear averages, failure on mandatory visual facts triggers sharp binary penalties. Extensive evaluation yields critical insights: (1) The Reliability Gap: models often verify fragmented elements correctly yet fail strict conjunctive constraints, exposing brittleness in dense domains; (2) Open-Closed Stratification: contrary to reasoning trends, we reveal a persistent 8% perception deficit between open-source and proprietary frontiers; and (3) Human-Aligned Rigor: our gated metrics substantially out-align conventional benchmarks, validating that strict perceptual fidelity is the prerequisite for reliable generation.",
+      "status": "abstract_found",
+      "verified": true,
+      "last_verified_at": "2026-07-05T12:26:49.854261",
+      "sources": [
+        {
+          "name": "openalex",
+          "query": "PerceptionRubrics: Calibrating Multimodal Evaluation to Human Perception",
+          "url": "https://arxiv.org/abs/2606.28322",
+          "confidence": "high",
+          "searched_at": "2026-07-05T12:25:50.848303"
+        }
+      ],
+      "expires_at": "2026-07-12T12:26:49.854428"
+    },
+    "rsiccllm": {
+      "display_name": "RSICCLLM",
+      "aliases": [],
+      "online_query": "RSICCLLM",
+      "added_at": "2026-06-29T18:56:41.016141"
+    },
+    "echosonar-r": {
+      "display_name": "EchoSonar-R: A Multi-View Reasoning-Enabled Model for Disease Classification and Report Generation in Echocardiography",
+      "aliases": [
+        "10.48550/arxiv.2606.28164"
+      ],
+      "online_query": "EchoSonar-R: A Multi-View Reasoning-Enabled Model for Disease Classification and Report Generation in Echocardiography",
+      "added_at": "2026-06-29T19:01:29.269732",
+      "authors": [
+        "Darya Taratynova",
+        "Ahmed Aly",
+        "Numan Saeed",
+        "Mohammad Yaqub"
+      ],
+      "year": 2026,
+      "venue": "arXiv (Cornell University)",
+      "doi": "10.48550/arxiv.2606.28164",
+      "url": "https://arxiv.org/abs/2606.28164",
+      "status": "metadata_found",
+      "verified": true,
+      "last_verified_at": "2026-07-05T13:41:46.188667",
+      "sources": [
+        {
+          "name": "openalex",
+          "query": "EchoSonar-R: A Multi-View Reasoning-Enabled Model for Disease Classification and Report Generation in Echocardiography",
+          "url": "https://arxiv.org/abs/2606.28164",
+          "confidence": "high",
+          "searched_at": "2026-07-05T12:15:33.298633"
+        }
+      ],
+      "expires_at": "2026-07-12T13:41:46.188764",
+      "abstract": "Echocardiography is the most widely used non-invasive cardiac imaging modality, providing essential information for cardiovascular diagnosis. Interpreting an echocardiogram requires synthesizing complementary evidence across multiple heart views to identify abnormalities and produce structured clinical reports. While recent efforts focus on improving classification performance, most models lack explicit diagnostic reasoning and spatially grounded anatomical evidence, limiting clinician trust. We present EchoSonar-R, a multi-view reasoning-enabled vision-language model that jointly performs multi-label disease classification and report generation from echocardiography studies. EchoSonar-R combines a spatiotemporal video encoder with a structure-aware cardiac detector that provides spatially grounded anatomical cues to improve interpretability and clinician trust during cross-view reasoning. EchoSonar-R is trained in two stages: supervised fine-tuning (SFT) on reasoning-annotated targets, followed by Group Relative Policy Optimization (GRPO) with task-specific rewards that jointly align classification and report generation within a unified reinforcement-learning framework. Across a private multi-view dataset and two public benchmarks, EchoSonar-R improves macro balanced accuracy by 17.1% on the private set and 6.1% on MIMICEchoQA over the strongest baseline, achieves a GREEN clinical faithfulness score of 0.800, and produces interpretable reasoning traces grounded in multi-view visual evidence."
+    },
+    "echosonar-r: a multi-view reasoning-enabled model for disease classification and report generation in echocardiography": {
+      "display_name": "EchoSonar-R: A Multi-View Reasoning-Enabled Model for Disease Classification and Report Generation in Echocardiography",
+      "aliases": [],
+      "online_query": "EchoSonar-R: A Multi-View Reasoning-Enabled Model for Disease Classification and Report Generation in Echocardiography",
+      "added_at": "2026-06-29T20:10:54.855740",
+      "expires_at": "",
+      "verified": false
+    },
+    "perceptionrubrics: calibrating multimodal evaluation to human perception": {
+      "display_name": "PerceptionRubrics: Calibrating Multimodal Evaluation to Human Perception",
+      "aliases": [],
+      "online_query": "PerceptionRubrics: Calibrating Multimodal Evaluation to Human Perception",
+      "added_at": "2026-06-29T20:13:32.851315",
+      "expires_at": "",
+      "verified": false
+    },
+    "rsiccllm: a multimodal large language model for remote sensing image change captioning": {
+      "display_name": "RSICCLLM: A Multimodal Large Language Model for Remote Sensing Image Change Captioning",
+      "aliases": [],
+      "online_query": "RSICCLLM: A Multimodal Large Language Model for Remote Sensing Image Change Captioning",
+      "added_at": "2026-06-29T20:13:32.855078",
+      "expires_at": "",
+      "verified": false
+    }
+  }
+}

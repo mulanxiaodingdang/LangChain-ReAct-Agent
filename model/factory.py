@@ -1,28 +1,20 @@
-from abc import ABC, abstractmethod
-from typing import Optional
-from langchain_core.embeddings import Embeddings
-from langchain_community.chat_models.tongyi import BaseChatModel
-from langchain_community.embeddings import DashScopeEmbeddings
-from langchain_community.chat_models.tongyi import ChatTongyi
-from utils.config_handler import rag_conf
+import os
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from utils.config_handler import rag_conf, agent_conf
 
+SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 
-class BaseModelFactory(ABC):
-    @abstractmethod
-    def generator(self) -> Optional[Embeddings | BaseChatModel]:
-        pass
+chat_model = ChatOpenAI(
+    model=rag_conf["chat_model_name"],
+    base_url=SILICONFLOW_BASE_URL,
+    api_key=SILICONFLOW_API_KEY,
+    timeout=agent_conf.get("llm_timeout", 120),
+    max_retries=agent_conf.get("llm_max_retries", 3),
+)
 
-
-class ChatModelFactory(BaseModelFactory):
-    def generator(self)->Optional[Embeddings | BaseChatModel]:
-        return ChatTongyi(model=rag_conf["chat_model_name"])
-
-
-class EmbeddingsFactory(BaseModelFactory):
-    def generator(self) -> Optional[Embeddings | BaseChatModel]:
-        return DashScopeEmbeddings(model=rag_conf["embedding_model_name"])
-
-
-chat_model = ChatModelFactory().generator()
-
-embed_model = EmbeddingsFactory().generator()
+embed_model = OpenAIEmbeddings(
+    model=rag_conf["embedding_model_name"],
+    base_url=SILICONFLOW_BASE_URL,
+    api_key=SILICONFLOW_API_KEY,
+)

@@ -1,109 +1,246 @@
-import os
-from utils.logger_handler import logger
-from langchain_core.tools import tool
+"""Agent 工具集 — 7 个工具：本地检索 + 在线检索 + 元数据 + 引用 + 对比 + KB缺失标记 + 综述模式
 
+每个工具内部通过 _shared_state 检查预算配额和在线结果门控。
+"""
+import json
+import os
+import time
+from langchain_core.tools import tool
 from rag.rag_service import RagSummarizeService
-import random
-from utils.config_handler import agent_conf
+from agent.retrieval import OnlineRetrievalPipeline
 from utils.path_tool import get_abs_path
+from utils.logger_handler import logger
 
 rag = RagSummarizeService()
+online_pipeline = OnlineRetrievalPipeline()
 
-user_ids = ["1001", "1002", "1003", "1004", "1005", "1006", "1007", "1008", "1009", "1010",]
-month_arr = ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06",
-             "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", ]
+KB_MISSING_INDEX_PATH = get_abs_path("data/kb_missing_index.json")
 
-external_data = {}
-
-
-@tool(description="从向量存储中检索参考资料")
-def rag_summarize(query: str) -> str:
-    return rag.rag_summarize(query)
-
-
-@tool(description="获取指定城市的天气，以消息字符串的形式返回")
-def get_weather(city: str) -> str:
-    return f"城市{city}天气为晴天，气温26摄氏度，空气湿度50%，南风1级，AQI21，最近6小时降雨概率极低"
+# ── 共享状态（由 ReactAgent.execute_stream() 注入）──
+_shared_state: dict = {
+    "budget": [0],
+    "retrieval_ref": [None],
+    "max_budget": 15,
+}
 
 
-@tool(description="获取用户所在城市的名称，以纯字符串形式返回")
-def get_user_location() -> str:
-    return random.choice(["深圳", "合肥", "杭州"])
+def _set_shared_state(budget_counter: list, retrieval_ref: list, max_budget: int = 15):
+    """由 ReactAgent 在每次 execute_stream 入口调用，重置预算并设置状态引用"""
+    _shared_state["budget"] = budget_counter
+    _shared_state["retrieval_ref"] = retrieval_ref
+    _shared_state["max_budget"] = max_budget
 
 
-@tool(description="获取用户的ID，以纯字符串形式返回")
-def get_user_id() -> str:
-    return random.choice(user_ids)
+def _check_budget() -> str | None:
+    """Return error string if budget exhausted, else None"""
+    _shared_state["budget"][0] += 1
+    if _shared_state["budget"][0] > _shared_state["max_budget"]:
+        return "[TOOL_BUDGET_EXHAUSTED] 工具调用次数已达上限，请基于已有信息直接回答。"
+    return None
 
 
-@tool(description="获取当前月份，以纯字符串形式返回")
-def get_current_month() -> str:
-    return random.choice(month_arr)
+def _check_online_flag() -> str | None:
+    """Return block string if online results already obtained, else None"""
+    ref = _shared_state["retrieval_ref"][0]
+    if ref is not None and getattr(ref, "online_results_obtained", False):
+        return "[KB_SEARCH_BLOCKED] 已获取在线结果，请基于在线结果直接回答。"
+    return None
 
 
-def generate_external_data():
-    """
-    {
-        "user_id": {
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            ...
-        },
-        "user_id": {
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            ...
-        },
-        "user_id": {
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            "month" : {"特征": xxx, "效率": xxx, ...}
-            ...
-        },
-        ...
-    }
-    :return:
-    """
-    if not external_data:
-        external_data_path = get_abs_path(agent_conf["external_data_path"])
-
-        if not os.path.exists(external_data_path):
-            raise FileNotFoundError(f"外部数据文件{external_data_path}不存在")
-
-        with open(external_data_path, "r", encoding="utf-8") as f:
-            for line in f.readlines()[1:]:
-                arr: list[str] = line.strip().split(",")
-
-                user_id: str = arr[0].replace('"', "")
-                feature: str = arr[1].replace('"', "")
-                efficiency: str = arr[2].replace('"', "")
-                consumables: str = arr[3].replace('"', "")
-                comparison: str = arr[4].replace('"', "")
-                time: str = arr[5].replace('"', "")
-
-                if user_id not in external_data:
-                    external_data[user_id] = {}
-
-                external_data[user_id][time] = {
-                    "特征": feature,
-                    "效率": efficiency,
-                    "耗材": consumables,
-                    "对比": comparison,
-                }
+def _log_tool_call(name: str, query: str):
+    logger.info(f"[Tool] 调用 {name}: {query[:200]}")
 
 
-@tool(description="从外部系统中获取指定用户在指定月份的使用记录，以纯字符串形式返回， 如果未检索到返回空字符串")
-def fetch_external_data(user_id: str, month: str) -> str:
-    generate_external_data()
+def _log_tool_result(name: str, result: str, start: float):
+    elapsed = time.time() - start
+    summary = result[:300].replace("\n", " ")
+    logger.info(f"[Tool] {name} 完成 ({elapsed:.1f}s) → {summary}")
 
-    try:
-        return external_data[user_id][month]
-    except KeyError:
-        logger.warning(f"[fetch_external_data]未能检索到用户：{user_id}在{month}的使用记录数据")
-        return ""
 
-@tool(description="无入参，无返回值，调用后触发中间件自动为报告生成的场景动态注入上下文信息，为后续提示词切换提供上下文信息")
-def fill_context_for_report():
-    return "fill_context_for_report已调用"
+# ── KB 缺失索引 ──
+
+def _load_kb_missing_index() -> set:
+    if not os.path.exists(KB_MISSING_INDEX_PATH):
+        return set()
+    with open(KB_MISSING_INDEX_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return set(data.get("titles", []))
+
+
+def _save_kb_missing_index(index: set):
+    os.makedirs(os.path.dirname(KB_MISSING_INDEX_PATH), exist_ok=True)
+    with open(KB_MISSING_INDEX_PATH, "w", encoding="utf-8") as f:
+        json.dump({"titles": sorted(index), "updated_at": str(len(index))}, f, ensure_ascii=False, indent=2)
+
+
+# ── 7 个工具 ──
+
+@tool(description="从本地论文向量库中检索相关论文全文片段，返回带编号引用[N]的学术资料内容（含论文标题、章节、页码）。适用于查找具体方法、实验数据、结论等。")
+def academic_search(query: str) -> str:
+    err = _check_budget()
+    if err:
+        return err
+    _log_tool_call("academic_search", query)
+    start = time.time()
+    result = rag.rag_summarize(query)
+    _log_tool_result("academic_search", result, start)
+    return result
+
+
+@tool(description="在线检索学术数据库（arXiv/OpenAlex/DBLP/Crossref/Semantic Scholar），查找最新发表的论文元数据（标题/作者/摘要/来源）。适用于查找尚未加入本地知识库的最新论文、验证论文身份。")
+def search_academic_papers(query: str) -> str:
+    err = _check_budget() or _check_online_flag()
+    if err:
+        return err
+    _log_tool_call("search_academic_papers", query)
+    start = time.time()
+    result = online_pipeline.run(query)
+    _log_tool_result("search_academic_papers", result, start)
+
+    # 标记在线搜索结果已获取
+    ref = _shared_state["retrieval_ref"][0]
+    if ref is not None:
+        ref.online_results_obtained = True
+
+    return result
+
+
+@tool(description="根据精确论文标题获取完整元数据：全部作者、摘要、发表年份、DOI、期刊/会议、链接。适用于获取某篇已知论文的详细信息。")
+def fetch_paper_metadata(title: str) -> str:
+    err = _check_budget() or _check_online_flag()
+    if err:
+        return err
+    _log_tool_call("fetch_paper_metadata", title)
+    start = time.time()
+
+    papers = online_pipeline.client.search(title, max_results=5)
+    if not papers:
+        return f"[PAPER_NOT_FOUND] 未找到匹配「{title}」的论文。"
+
+    title_lower = title.strip().lower()
+    best = None
+    for p in papers:
+        if p.title.strip().lower() == title_lower:
+            best = p
+            break
+    if not best:
+        best = papers[0]
+
+    lines = [
+        f"标题: {best.title}",
+        f"作者: {', '.join(best.authors) if best.authors else '未知'}",
+        f"年份: {best.year or '未知'}",
+        f"来源: {best.source}",
+    ]
+    if best.doi:
+        lines.append(f"DOI: {best.doi}")
+    if best.venue:
+        lines.append(f"发表: {best.venue}")
+    if best.url:
+        lines.append(f"链接: {best.url}")
+    if best.abstract:
+        abstract = best.abstract[:500].strip()
+        lines.append(f"摘要: {abstract}...")
+    if best.citation_count:
+        lines.append(f"引用数: {best.citation_count}")
+
+    result = "\n".join(lines)
+    _log_tool_result("fetch_paper_metadata", result, start)
+    return result
+
+
+@tool(description="根据精确论文标题获取引用计数。适用于了解某篇论文的学术影响力。")
+def fetch_citation_info(title: str) -> str:
+    err = _check_budget() or _check_online_flag()
+    if err:
+        return err
+    _log_tool_call("fetch_citation_info", title)
+    start = time.time()
+
+    papers = online_pipeline.client.search(title, max_results=5)
+    if not papers:
+        return f"[PAPER_NOT_FOUND] 未找到匹配「{title}」的论文。"
+
+    title_lower = title.strip().lower()
+    best = None
+    for p in papers:
+        if p.title.strip().lower() == title_lower:
+            best = p
+            break
+    if not best:
+        best = papers[0]
+
+    count = best.citation_count or 0
+    source = best.source
+    result = f"《{best.title}》引用次数: {count}（来源: {source}）"
+    _log_tool_result("fetch_citation_info", result, start)
+    return result
+
+
+@tool(description="同时检索并对比多篇论文（2-4篇）。对每篇论文分别查找本地知识库片段和在线元数据，返回结构化对比信息。标题用分号(;)分隔。适用于比较不同方法的异同优劣。")
+def compare_papers(titles_str: str) -> str:
+    err = _check_budget()
+    if err:
+        return err
+    _log_tool_call("compare_papers", titles_str)
+
+    titles = [t.strip() for t in titles_str.split(";") if t.strip()]
+    if len(titles) < 2:
+        return "请提供至少 2 篇论文标题，用分号 (;) 分隔。"
+    if len(titles) > 4:
+        titles = titles[:4]
+
+    start = time.time()
+    results = []
+    for i, title in enumerate(titles):
+        results.append(f"\n=== 论文 {i+1}: {title} ===")
+
+        local_docs = rag.retriever_docs(title)
+        if local_docs:
+            results.append(f"[本地KB] 找到 {len(local_docs)} 个相关片段:")
+            for doc in local_docs[:2]:
+                meta = doc.metadata
+                src = meta.get("paper_title", "") or meta.get("source_file", "")
+                sec = meta.get("section", "")
+                content_preview = doc.page_content[:200].replace("\n", " ")
+                results.append(f"  - 来源: {src} | 章节: {sec}")
+                results.append(f"    内容: {content_preview}...")
+        else:
+            results.append("[本地KB] 未找到相关片段")
+
+        papers = online_pipeline.client.search(title, max_results=3)
+        if papers:
+            p = papers[0]
+            results.append(f"[在线] {p.title} | {', '.join(p.authors[:3]) if p.authors else ''} | {p.year} | {p.source}")
+            if p.abstract:
+                results.append(f"  摘要: {p.abstract[:200]}...")
+
+    result = "\n".join(results)
+    _log_tool_result("compare_papers", result, start)
+    return result
+
+
+@tool(description="将某篇论文标记为「本地知识库缺失」。后续检索到该论文时会自动跳过本地搜索，直接引导使用在线工具。")
+def mark_paper_not_in_kb(title: str) -> str:
+    err = _check_budget()
+    if err:
+        return err
+    _log_tool_call("mark_paper_not_in_kb", title)
+
+    index = _load_kb_missing_index()
+    title_normalized = title.strip()
+    if title_normalized.lower() in {t.lower() for t in index}:
+        return f"「{title_normalized}」已在 KB 缺失索引中。"
+    index.add(title_normalized)
+    _save_kb_missing_index(index)
+    logger.info(f"[KB Missing] 已标记: {title_normalized}")
+    return f"已标记「{title_normalized}」为 KB 缺失，后续将跳过本地检索。"
+
+
+@tool(description="触发文献综述模式。对某个研究领域进行系统性搜索和全面归纳。调用后 Agent 将切换为综述视角，进行多轮广泛检索。")
+def start_literature_review(topic: str) -> str:
+    err = _check_budget()
+    if err:
+        return err
+    _log_tool_call("start_literature_review", topic)
+    return f"__REVIEW_MODE__:{topic}"
