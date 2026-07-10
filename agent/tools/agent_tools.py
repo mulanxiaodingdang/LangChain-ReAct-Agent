@@ -9,6 +9,7 @@ from datetime import datetime
 from langchain_core.tools import tool
 from rag.rag_service import RagSummarizeService
 from agent.retrieval import OnlineRetrievalPipeline
+from agent.retrieval.academic_client import SearchIntent, AcademicDataClient
 from utils.path_tool import get_abs_path
 from utils.logger_handler import logger
 
@@ -35,10 +36,16 @@ def _save_kb_missing_papers(papers: dict):
         json.dump({"papers": papers}, f, ensure_ascii=False, indent=2)
 
 
-def _auto_index_online_papers(papers: list, local_docs: list | None = None):
-    """在线搜索结果自动写入 kb_missing_papers.json（仅当本地 KB 未命中且尚未索引）"""
+def _auto_index_online_papers(papers: list, local_docs: list | None = None,
+                               scored: list | None = None, min_score: float = 0.70):
+    """在线搜索结果自动写入 kb_missing_papers.json（仅当本地 KB 未命中且尚未索引）。
+    若提供 scored 列表 [(paper, score), ...], 仅索引 score ≥ min_score 的论文。"""
     if local_docs:
         return  # 本地 KB 已有，跳过
+
+    if scored is not None and min_score > 0:
+        papers = [p for p, s in scored if s >= min_score]
+
     existing = _load_kb_missing_papers()
     updated = False
     for p in papers:
@@ -124,6 +131,46 @@ def _save_kb_missing_index(index: set):
         json.dump({"titles": sorted(index), "updated_at": str(len(index))}, f, ensure_ascii=False, indent=2)
 
 
+# ── 在线检索内部函数（Commit 2: SearchIntent 驱动）──
+
+def _search_academic_papers_internal(query: str, candidate: str = "") -> str:
+    """内部在线检索：自动构建 SearchIntent 并走三阶段管线。
+    若 candidate 非空 → Stage 1 candidate-only 检索；
+    若 candidate 为空 → 走旧逻辑 run()。"""
+    if candidate:
+        candidate_type = AcademicDataClient._infer_candidate_type(candidate)
+        intent = SearchIntent(
+            candidate=candidate,
+            candidate_type=candidate_type,
+            keyword="",
+            fallback_query=query,
+        )
+        _log_tool_call("search_academic_papers", f"candidate={candidate} type={candidate_type} fallback={query[:100]}")
+        start = time.time()
+        result = online_pipeline.run_with_intent(intent)
+        _log_tool_result("search_academic_papers", result, start)
+    else:
+        _log_tool_call("search_academic_papers", query)
+        start = time.time()
+        result = online_pipeline.run(query)
+        _log_tool_result("search_academic_papers", result, start)
+
+    # Auto-index
+    try:
+        scored = online_pipeline.get_last_scored()
+        if scored:
+            _auto_index_online_papers([], scored=scored, min_score=0.70)
+    except Exception:
+        pass
+
+    # 标记在线搜索结果已获取
+    ref = _shared_state["retrieval_ref"][0]
+    if ref is not None:
+        ref.online_results_obtained = True
+
+    return result
+
+
 # ── 7 个工具 ──
 
 @tool(description="从本地论文向量库中检索相关论文全文片段，返回带编号引用[N]的学术资料内容（含论文标题、章节、页码）。适用于查找具体方法、实验数据、结论等。")
@@ -143,25 +190,7 @@ def search_academic_papers(query: str) -> str:
     err = _check_budget() or _check_online_flag()
     if err:
         return err
-    _log_tool_call("search_academic_papers", query)
-    start = time.time()
-    result = online_pipeline.run(query)
-    _log_tool_result("search_academic_papers", result, start)
-
-    # Auto-index online results
-    if not result.startswith("未找到"):
-        try:
-            papers = online_pipeline.client.search(query, max_results=20)
-            _auto_index_online_papers(papers)
-        except Exception:
-            pass
-
-    # 标记在线搜索结果已获取
-    ref = _shared_state["retrieval_ref"][0]
-    if ref is not None:
-        ref.online_results_obtained = True
-
-    return result
+    return _search_academic_papers_internal(query, candidate=query)
 
 
 @tool(description="根据精确论文标题获取完整元数据：全部作者、摘要、发表年份、DOI、期刊/会议、链接。适用于获取某篇已知论文的详细信息。")
@@ -250,11 +279,21 @@ def compare_papers(titles_str: str) -> str:
         titles = titles[:4]
 
     start = time.time()
+    kb_missing_index = _load_kb_missing_index()
     results = []
     for i, title in enumerate(titles):
         results.append(f"\n=== 论文 {i+1}: {title} ===")
 
-        local_docs = rag.retriever_docs(title)
+        # KB 缺失索引命中 → 跳过本地检索，直接走在线
+        title_lower = title.strip().lower()
+        in_kb_missing = any(title_lower in t.lower() or t.lower() in title_lower for t in kb_missing_index)
+
+        local_docs = []
+        if in_kb_missing:
+            results.append("[本地KB] 论文已在 KB 缺失索引中，跳过本地检索")
+        else:
+            local_docs = rag.retriever_docs(title)
+
         if local_docs:
             results.append(f"[本地KB] 找到 {len(local_docs)} 个相关片段:")
             for doc in local_docs[:2]:
@@ -266,7 +305,7 @@ def compare_papers(titles_str: str) -> str:
                 results.append(f"    内容: {content_preview}...")
             if len(local_docs) >= 3:
                 continue
-        else:
+        elif not in_kb_missing:
             results.append("[本地KB] 未找到相关片段")
 
         papers = online_pipeline.client.search(title, max_results=3)

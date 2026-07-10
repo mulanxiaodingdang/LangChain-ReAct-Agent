@@ -171,7 +171,7 @@
     "doi": "https://doi.org/10.1016/j.hcc.2024.100211",
     "url": "https://doi.org/10.1016/j.hcc.2024.100211",
     "abstract": "",
-    "citation_count": 881,
+    "citation_count": 886,
     "source": "OpenAlex"
   },
   {
@@ -192,6 +192,21 @@
     "source": "OpenAlex"
   },
   {
+    "title": "Security and Privacy Challenges of Large Language Models: A Survey",
+    "authors": [
+      "Badhan Chandra Das",
+      "M. Hadi Amini",
+      "Yanzhao Wu"
+    ],
+    "year": "2025",
+    "venue": "ACM Computing Surveys",
+    "doi": "https://doi.org/10.1145/3712001",
+    "url": "https://doi.org/10.1145/3712001",
+    "abstract": "",
+    "citation_count": 259,
+    "source": "OpenAlex"
+  },
+  {
     "title": "Harnessing the Power of LLMs in Practice: A Survey on ChatGPT and Beyond",
     "authors": [
       "Jingfeng Yang",
@@ -206,21 +221,6 @@
     "url": "https://doi.org/10.1145/3649506",
     "abstract": "",
     "citation_count": 462,
-    "source": "OpenAlex"
-  },
-  {
-    "title": "Security and Privacy Challenges of Large Language Models: A Survey",
-    "authors": [
-      "Badhan Chandra Das",
-      "M. Hadi Amini",
-      "Yanzhao Wu"
-    ],
-    "year": "2025",
-    "venue": "ACM Computing Surveys",
-    "doi": "https://doi.org/10.1145/3712001",
-    "url": "https://doi.org/10.1145/3712001",
-    "abstract": "",
-    "citation_count": 257,
     "source": "OpenAlex"
   }
 ]

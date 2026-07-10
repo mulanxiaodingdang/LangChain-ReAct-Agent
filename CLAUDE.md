@@ -1,6 +1,6 @@
 
 # 项目基础信息 (Project Context)
-- 项目名称：LangChain ReAct Agent · 学术通（基于 LangChain + ReAct 范式 + RAG 检索增强的科研论文问答系统 ，以 data/ 下的科研论文为知识库）
+- 项目名称：LangChain ReAct Agent · 科研论文问答系统（基于 LangChain + ReAct 范式 + RAG 检索增强的科研论文问答系统 ，以 data/ 下的科研论文为知识库）
 - 技术栈：Python 3.10+ / LangChain 0.3 / LangGraph 0.2 / Streamlit 1.40 / Chroma 向量库 / 硅基流动 API（DeepSeek-V3.2 + BGE-M3）/ YAML 配置驱动
 - 范围限制：请只关注和处理与本项目相关的 Python/YAML/TXT 等文件，不要盲目查找或读取其他无关语言的文件。
 
