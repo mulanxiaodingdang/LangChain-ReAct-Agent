@@ -1,0 +1,42 @@
+[
+  {
+    "title": "RSICCLLM: A Multimodal Large Language Model for Remote Sensing Image Change Captioning",
+    "authors": [
+      "Yelin Wang",
+      "Zijia Song",
+      "Shuo Ye",
+      "Chuanguang Yang",
+      "Miaoyu Wang"
+    ],
+    "year": "2026",
+    "venue": "arXiv (Cornell University)",
+    "doi": "https://doi.org/10.48550/arxiv.2606.28266",
+    "url": "https://doi.org/10.48550/arxiv.2606.28266",
+    "abstract": "",
+    "citation_count": 0,
+    "source": "OpenAlex",
+    "arxiv_id": "",
+    "openalex_id": "W7166566735",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "RSICCLLM: A Multimodal Large Language Model for Remote Sensing Image Change Captioning",
+    "authors": [
+      "Yelin Wang",
+      "Zijia Song",
+      "Shuo Ye",
+      "C R Yang",
+      "M Wang"
+    ],
+    "year": "2026",
+    "venue": "arXiv (Cornell University)",
+    "doi": null,
+    "url": "https://arxiv.org/abs/2606.28266",
+    "abstract": "",
+    "citation_count": 0,
+    "source": "OpenAlex",
+    "arxiv_id": "",
+    "openalex_id": "W7166900601",
+    "semantic_scholar_id": ""
+  }
+]

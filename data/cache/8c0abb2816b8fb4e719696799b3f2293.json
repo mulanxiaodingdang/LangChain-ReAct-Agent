@@ -1,0 +1,115 @@
+[
+  {
+    "title": "LLM agents security duality: a comprehensive survey of self-security and empowered cybersecurity.",
+    "authors": [
+      "Yiwei Xu",
+      "Yong Zhuang",
+      "Xuanming Liu",
+      "Tian Zhang 0019",
+      "Bowen Xiao",
+      "Xiaoyang Xu 0001",
+      "Delong Jiang",
+      "Juan Wang 0006",
+      "Hongxin Hu"
+    ],
+    "year": "2026",
+    "venue": "Artif. Intell. Rev.",
+    "doi": "",
+    "url": "https://doi.org/10.1007/s10462-026-11563-0",
+    "abstract": "",
+    "citation_count": 0,
+    "source": "DBLP",
+    "arxiv_id": "",
+    "openalex_id": "",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "Security and privacy in LLMs: A comprehensive survey of threats and mitigation strategies.",
+    "authors": [
+      "Aymen Dia Eddine Berini",
+      "Norziana Jamil",
+      "Ala-Eddine Benrazek",
+      "Abderrahmane Lakas",
+      "Leila Ismail",
+      "Mohamed Amine Ferrag",
+      "Kwok-Yan Lam"
+    ],
+    "year": "2026",
+    "venue": "Inf. Fusion",
+    "doi": "",
+    "url": "https://doi.org/10.1016/j.inffus.2026.104241",
+    "abstract": "",
+    "citation_count": 0,
+    "source": "DBLP",
+    "arxiv_id": "",
+    "openalex_id": "",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "LLM agents security duality: a comprehensive survey of self-security and empowered cybersecurity.",
+    "authors": [
+      "Yiwei Xu",
+      "Yong Zhuang",
+      "Xuanming Liu",
+      "Tian Zhang 0019",
+      "Bowen Xiao",
+      "Xiaoyang Xu 0001",
+      "Delong Jiang",
+      "Juan Wang 0006",
+      "Hongxin Hu"
+    ],
+    "year": "2026",
+    "venue": "CoRR",
+    "doi": "",
+    "url": "https://doi.org/10.48550/arXiv.2606.28450",
+    "abstract": "",
+    "citation_count": 0,
+    "source": "DBLP",
+    "arxiv_id": "",
+    "openalex_id": "",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "AI-Augmented SOC: A Survey of LLMs and Agents for Security Automation.",
+    "authors": [
+      "Siddhant Srinivas",
+      "Brandon Kirk",
+      "Julissa Zendejas",
+      "Michael Espino",
+      "Matthew Boskovich",
+      "Abdul Bari",
+      "Khalil Dajani",
+      "Nabeel Alzahrani"
+    ],
+    "year": "2025",
+    "venue": "J. Cybersecur. Priv.",
+    "doi": "",
+    "url": "https://doi.org/10.3390/jcp5040095",
+    "abstract": "",
+    "citation_count": 0,
+    "source": "DBLP",
+    "arxiv_id": "",
+    "openalex_id": "",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "Structuring Security: A Survey of Cybersecurity Ontologies, Semantic Log Processing, and LLMs Application.",
+    "authors": [
+      "Bruno Lourenço",
+      "Pedro Adão",
+      "João F. Ferreira 0003",
+      "Mario Monteiro Marques",
+      "Cátia Vaz"
+    ],
+    "year": "2025",
+    "venue": "CoRR",
+    "doi": "",
+    "url": "https://doi.org/10.48550/arXiv.2510.16610",
+    "abstract": "",
+    "citation_count": 0,
+    "source": "DBLP",
+    "arxiv_id": "",
+    "openalex_id": "",
+    "semantic_scholar_id": ""
+  }
+]

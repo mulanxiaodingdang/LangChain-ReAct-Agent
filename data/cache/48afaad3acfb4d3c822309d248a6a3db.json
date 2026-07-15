@@ -1,0 +1,21 @@
+[
+  {
+    "title": "EchoSonar-R: A Multi-View Reasoning-Enabled Model for Disease Classification and Report Generation in Echocardiography",
+    "authors": [
+      "Darya Taratynova",
+      "Ahmed Aly",
+      "Numan Saeed",
+      "Mohammad Yaqub"
+    ],
+    "year": "",
+    "venue": "",
+    "doi": "",
+    "url": "http://arxiv.org/abs/2606.28164v1",
+    "abstract": "Echocardiography is the most widely used non-invasive cardiac imaging modality, providing essential information for cardiovascular diagnosis. Interpreting an echocardiogram requires synthesizing complementary evidence across multiple heart views to identify abnormalities and produce structured clinical reports. While recent efforts focus on improving classification performance, most models lack explicit diagnostic reasoning and spatially grounded anatomical evidence, limiting clinician trust. We",
+    "citation_count": 0,
+    "source": "arXiv",
+    "arxiv_id": "2606.28164v1",
+    "openalex_id": "",
+    "semantic_scholar_id": ""
+  }
+]

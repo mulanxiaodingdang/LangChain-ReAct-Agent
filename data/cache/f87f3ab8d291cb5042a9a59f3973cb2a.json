@@ -1,0 +1,100 @@
+[
+  {
+    "title": "A survey on large language model (LLM) security and privacy: The Good, The Bad, and The Ugly",
+    "authors": [
+      "Yifan Yao",
+      "Jinhao Duan",
+      "Kaidi Xu",
+      "Yuanfang Cai",
+      "Zhibo Sun"
+    ],
+    "year": "2024",
+    "venue": "High-Confidence Computing",
+    "doi": "https://doi.org/10.1016/j.hcc.2024.100211",
+    "url": "https://doi.org/10.1016/j.hcc.2024.100211",
+    "abstract": "",
+    "citation_count": 887,
+    "source": "OpenAlex",
+    "arxiv_id": "",
+    "openalex_id": "W4392353733",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "LLM-Based Edge Intelligence: A Comprehensive Survey on Architectures, Applications, Security and Trustworthiness",
+    "authors": [
+      "Othmane Friha",
+      "Mohamed Amine Ferrag",
+      "Burak Kantarcı",
+      "Burak Çakmak",
+      "Arda Ozgun"
+    ],
+    "year": "2024",
+    "venue": "IEEE Open Journal of the Communications Society",
+    "doi": "https://doi.org/10.1109/ojcoms.2024.3456549",
+    "url": "https://doi.org/10.1109/ojcoms.2024.3456549",
+    "abstract": "",
+    "citation_count": 141,
+    "source": "OpenAlex",
+    "arxiv_id": "",
+    "openalex_id": "W4402350363",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "Security and Privacy Challenges of Large Language Models: A Survey",
+    "authors": [
+      "Badhan Chandra Das",
+      "M. Hadi Amini",
+      "Yanzhao Wu"
+    ],
+    "year": "2025",
+    "venue": "ACM Computing Surveys",
+    "doi": "https://doi.org/10.1145/3712001",
+    "url": "https://doi.org/10.1145/3712001",
+    "abstract": "",
+    "citation_count": 260,
+    "source": "OpenAlex",
+    "arxiv_id": "",
+    "openalex_id": "W4406302454",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "Harnessing the Power of LLMs in Practice: A Survey on ChatGPT and Beyond",
+    "authors": [
+      "Jingfeng Yang",
+      "Hongye Jin",
+      "Ruixiang Tang",
+      "Xiaotian Han",
+      "Qizhang Feng"
+    ],
+    "year": "2024",
+    "venue": "ACM Transactions on Knowledge Discovery from Data",
+    "doi": "https://doi.org/10.1145/3649506",
+    "url": "https://doi.org/10.1145/3649506",
+    "abstract": "",
+    "citation_count": 462,
+    "source": "OpenAlex",
+    "arxiv_id": "",
+    "openalex_id": "W4392240262",
+    "semantic_scholar_id": ""
+  },
+  {
+    "title": "A Survey on Large Language Model (LLM) Security and Privacy: The Good, the Bad, and the Ugly",
+    "authors": [
+      "Yifan Yao",
+      "Jinhao Duan",
+      "Kaidi Xu",
+      "Yuanfang Cai",
+      "Sun, Zhibo"
+    ],
+    "year": "2023",
+    "venue": "arXiv (Cornell University)",
+    "doi": "https://doi.org/10.48550/arxiv.2312.02003",
+    "url": "http://arxiv.org/abs/2312.02003",
+    "abstract": "",
+    "citation_count": 44,
+    "source": "OpenAlex",
+    "arxiv_id": "",
+    "openalex_id": "W4389364428",
+    "semantic_scholar_id": ""
+  }
+]
