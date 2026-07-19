@@ -281,6 +281,7 @@ class ReactAgent:
 
     def _llm_judge_chunks(self, chunks: list, query: str) -> Generator[dict, None, dict]:
         """LLM 逐 chunk 判断相关性 + 充分性 + 生成 refine_query"""
+        yield {"type": "system", "content": "正在分析检索质量...", "name": "system"}
         if not chunks:
             yield {"type": "text", "content": "[系统] 未检索到任何 chunk", "name": "system"}
             return {"sufficient": False, "relevant_chunks": [], "refine_query": query, "judgment": ""}
@@ -436,12 +437,12 @@ class ReactAgent:
                     page = f"p.{ps}" if ps == pe else f"pp.{ps}-{pe}"
                 else:
                     page = "未知"
-                snippet = doc.page_content[:200].replace("\n", " ")
+                snippet = doc.page_content[:500].replace("\n", " ")
                 ref_lines.append(f"[{i}] 《{title}》| {section} | {page} | {snippet}...")
             for i, block in enumerate(online_blocks, online_start):
                 title = block.get("title", "未知")
                 source = block.get("source", "在线")
-                snippet = block.get("content", "")[:200].replace("\n", " ")
+                snippet = block.get("content", "")[:500].replace("\n", " ")
                 ref_lines.append(f"[{i}] [在线]《{title}》| {source} | {snippet}...")
             yield {"type": "references", "content": "\n".join(ref_lines), "name": "system"}
 
@@ -579,6 +580,7 @@ class ReactAgent:
         from rag.rag_service import RagSummarizeService
         rag = RagSummarizeService()
 
+        yield {"type": "system", "content": "正在提取论文名称...", "name": "system"}
         candidates = self._extract_candidates(query)
         subject = candidates[0] if candidates else ""
 
@@ -589,6 +591,7 @@ class ReactAgent:
         missing = self._match_kb_missing(subject if subject else query)
         if missing:
             logger.info(f"[QA] KB缺失命中 → 在线检索")
+            yield {"type": "system", "content": "正在在线检索论文...", "name": "system"}
             online_q = missing.get("online_query") or missing.get("display_name", query)
             online_result = _search_academic_papers_internal(online_q, candidate=subject if subject else "")
             logger.info(f"[QA] 在线检索完成 ({len(online_result)} chars)")
@@ -725,6 +728,7 @@ class ReactAgent:
             else:
                 online_q = self._build_online_query(query, subject)
                 logger.info(f"[QA] 在线兜底（无kb_missing），关键词query: {online_q}")
+            yield {"type": "system", "content": "正在在线检索论文...", "name": "system"}
             online_result = _search_academic_papers_internal(online_q, candidate=subject if subject else "")
             logger.info(f"[QA] 在线检索结果 ({len(online_result)} chars): {online_result[:300]}")
             self.callback.tool_invocation_log.append({
@@ -880,12 +884,14 @@ class ReactAgent:
         from rag.rag_service import RagSummarizeService
         rag = RagSummarizeService()
 
+        yield {"type": "system", "content": "正在提取论文名称...", "name": "system"}
         candidates = self._extract_candidates(query)
         if not candidates:
             yield from self._execute_qa_pipeline(query)
             return
 
         # 提取对比维度（所有 subject 共用）
+        yield {"type": "system", "content": "正在分析对比维度...", "name": "system"}
         aspects = self._extract_compare_aspects(query)
 
         all_chunks: list = []
@@ -1089,6 +1095,7 @@ class ReactAgent:
         # 3. 不足则在线补充
         extra_context = ""
         if not judge_result["sufficient"]:
+            yield {"type": "system", "content": "正在在线检索补充文献...", "name": "system"}
             subject = self._extract_candidates(query)
             first = subject[0] if subject else ""
             online_q = self._build_online_query(query, first)

@@ -476,7 +476,7 @@
       "venue": "arXiv (Cornell University)",
       "doi": "https://doi.org/10.48550/arxiv.2607.06565",
       "url": "http://arxiv.org/abs/2607.06565v1",
-      "abstract": "Unified 3D foundation models aspire to generate 3D assets and reason about them in language within a single backbone, but their text-3D interaction remains largely implicit. Existing methods concatenate text and 3D tokens into a flat sequence and rely on self-attention, collapsing coarse structural cues and fine geometric details into one undifferentiated representation. We introduce ELSA3D, a unified 3D model that addresses this with elastic semantic anchoring, structuring language and geometri",
+      "abstract": "",
       "status": "auto_indexed",
       "verified": false,
       "added_at": "2026-07-15T16:00:51.086747"
@@ -499,7 +499,7 @@
       "venue": "Proceedings of the 2025 ACM SIGSAC Conference on Computer and Communications Security",
       "doi": "10.1145/3719027.3765023",
       "url": "http://arxiv.org/abs/2501.02968v6",
-      "abstract": "Retrieval-Augmented Generation (RAG) enriches LLMs by dynamically retrieving external knowledge, reducing hallucinations and satisfying real-time information needs. While existing research mainly targets RAG's performance and efficiency, emerging studies highlight critical security concerns. Yet, current adversarial approaches remain limited, mostly addressing white-box scenarios or heuristic black-box attacks without fully investigating vulnerabilities in the retrieval phase. Additionally, prio",
+      "abstract": "",
       "status": "auto_indexed",
       "verified": false,
       "added_at": "2026-07-15T16:07:54.849281"
@@ -3162,7 +3162,7 @@
       "venue": "",
       "doi": "",
       "url": "http://arxiv.org/abs/0901.0512v4",
-      "abstract": "A detailed study is presented of the expected performance of the ATLAS detector. The reconstruction of tracks, leptons, photons, missing energy and jets is investigated, together with the performance of b-tagging and the trigger. The physics potential for a variety of interesting physics processes, within the Standard Model and beyond, is examined. The study comprises a series of notes based on simulations of the detector and physics processes, with particular emphasis given to the data expected",
+      "abstract": "",
       "status": "auto_indexed",
       "verified": false,
       "added_at": "2026-07-15T16:12:47.616701"
@@ -3192,7 +3192,7 @@
       "venue": "",
       "doi": "",
       "url": "http://arxiv.org/abs/2110.07787v3",
-      "abstract": "Human and animal tissues consist of heterogeneous cell types that organize and interact in highly structured manners. Bulk and single-cell sequencing technologies remove cells from their original microenvironments, resulting in a loss of spatial information. Spatial transcriptomics is a recent technological innovation that measures transcriptomic information while preserving spatial information. Spatial transcriptomic data can be generated in several ways. RNA molecules are measured by in situ s",
+      "abstract": "",
       "status": "auto_indexed",
       "verified": false,
       "added_at": "2026-07-15T18:29:19.260273"
@@ -3210,7 +3210,7 @@
       "venue": "",
       "doi": "",
       "url": "http://arxiv.org/abs/2311.13801v1",
-      "abstract": "With the emergence of advanced spatial transcriptomic technologies, there has been a surge in research papers dedicated to analyzing spatial transcriptomics data, resulting in significant contributions to our understanding of biology. The initial stage of downstream analysis of spatial transcriptomic data has centered on identifying spatially variable genes (SVGs) or genes expressed with specific spatial patterns across the tissue. SVG detection is an important task since many downstream analyse",
+      "abstract": "",
       "status": "auto_indexed",
       "verified": false,
       "added_at": "2026-07-15T18:29:19.260718"

@@ -175,9 +175,15 @@ def render_chat_page():
                     text_placeholder.markdown("".join(collected_text) + "▌")
 
                 elif chunk_type == "references":
+                    ref_content = chunk.get("content", "")
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": ref_content,
+                        "type": "references",
+                    })
                     with tool_placeholder.container():
                         with st.expander("引用来源", expanded=False):
-                            st.text(chunk.get("content", ""))
+                            st.text(ref_content)
 
                 elif chunk_type == "tool":
                     tool_name = chunk.get("name", "unknown")
