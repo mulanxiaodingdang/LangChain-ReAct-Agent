@@ -1,8 +1,8 @@
-"""科研论文问答系统 — 基于 LangChain ReAct Agent + RAG 检索增强"""
+"""PaperMind-科研论文问答系统 — 基于 LangChain ReAct Agent + RAG 检索增强"""
 import streamlit as st
 
 st.set_page_config(
-    page_title="科研论文问答系统",
+    page_title="PaperMind-科研论文问答系统",
     page_icon="📄",
     layout="wide",
     initial_sidebar_state="auto",
@@ -65,12 +65,12 @@ elif page == "📖 关于":
 
     st.markdown('<div class="about-section">', unsafe_allow_html=True)
     st.markdown(
-        '<div class="about-title">📄 科研论文问答系统</div>',
+        '<div class="about-title">📄 PaperMind-科研论文问答系统</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
         "基于 LangChain + ReAct 范式 + RAG 检索增强，支持多意图路由、双通道检索、"
-        "身份感知验证的科研论文智能问答 Agent。"
+        "身份感知验证的PaperMind-科研论文问答系统。"
     )
 
     st.markdown("### 核心能力")

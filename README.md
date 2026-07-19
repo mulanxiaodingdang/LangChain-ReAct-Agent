@@ -1,8 +1,8 @@
 <div align="center">
 
-# LangChain ReAct Agent · 科研论文问答系统
+# PaperMind-科研论文问答系统
 
-**基于 LangChain + ReAct 范式 + RAG 检索增强的科研论文智能问答系统**
+**基于 LangChain + ReAct 范式 + RAG 检索增强的科研论文智能问答 Agent**
 
 </div>
 

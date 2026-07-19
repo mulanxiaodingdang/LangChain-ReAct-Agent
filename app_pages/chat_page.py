@@ -299,7 +299,7 @@ def render_chat_page():
             st.rerun()
 
     # --- Main chat area ---
-    st.markdown('<div class="main-title">📄 科研论文问答系统</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">📄 PaperMind-科研论文问答系统</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="main-subtitle">多意图 Agent · 本地知识库 + 在线学术检索 · '
         'QA / 对比 / 综述</div>',
