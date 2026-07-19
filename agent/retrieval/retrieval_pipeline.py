@@ -164,12 +164,9 @@ class OnlineRetrievalPipeline:
             authors = ", ".join(paper.authors[:2]) if paper.authors else ""
             year = f"({paper.year})" if paper.year else ""
             title = paper.title
-            if len(title) > 100:
-                title = title[:97] + "..."
             lines.append(f"[{i + 1}] {title} | {authors} {year} | {paper.source}")
             if paper.abstract:
-                abstract_short = paper.abstract[:150].strip()
-                lines.append(f"    摘要: {abstract_short}...")
+                lines.append(f"    摘要: {paper.abstract}")
 
         return "\n".join(lines)
 
@@ -211,12 +208,9 @@ class OnlineRetrievalPipeline:
             authors = ", ".join(paper.authors[:2]) if paper.authors else ""
             year = f"({paper.year})" if paper.year else ""
             title = paper.title
-            if len(title) > 100:
-                title = title[:97] + "..."
             lines.append(f"[{i + 1}] {title} | {authors} {year} | {paper.source}")
             if paper.abstract:
-                abstract_short = paper.abstract[:150].strip()
-                lines.append(f"    摘要: {abstract_short}...")
+                lines.append(f"    摘要: {paper.abstract}")
 
         return "\n".join(lines)
 

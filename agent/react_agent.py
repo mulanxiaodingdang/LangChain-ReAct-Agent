@@ -437,14 +437,14 @@ class ReactAgent:
                     page = f"p.{ps}" if ps == pe else f"pp.{ps}-{pe}"
                 else:
                     page = "未知"
-                snippet = doc.page_content[:500].replace("\n", " ")
-                ref_lines.append(f"[{i}] 《{title}》| {section} | {page} | {snippet}...")
+                snippet = doc.page_content.replace("\n", " ")
+                ref_lines.append(f"[{i}] 《{title}》| {section} | {page} | {snippet}")
             for i, block in enumerate(online_blocks, online_start):
                 title = block.get("title", "未知")
                 source = block.get("source", "在线")
-                snippet = block.get("content", "")[:500].replace("\n", " ")
-                ref_lines.append(f"[{i}] [在线]《{title}》| {source} | {snippet}...")
-            yield {"type": "references", "content": "\n".join(ref_lines), "name": "system"}
+                snippet = block.get("content", "").replace("\n", " ")
+                ref_lines.append(f"[{i}] [在线]《{title}》| {source} | {snippet}")
+            yield {"type": "references", "content": "\n\n".join(ref_lines), "name": "system"}
 
         # 记忆更新
         if final_text.strip():
@@ -492,7 +492,7 @@ class ReactAgent:
             display = missing.get("display_name", subject)
             context = f"[在线检索] 论文「{display}」不在本地 KB 中：\n{online_result}"
             if missing.get("abstract"):
-                context += f"\n\n预存元数据：摘要={missing['abstract'][:300]}..."
+                context += f"\n\n预存元数据：摘要={missing['abstract']}"
             return EvidenceItem(subject=subject, content=context, source="online", is_missing=True)
 
         # Guard 1: 本地 KB 已禁用 → 交给调用方决定是否在线
@@ -607,7 +607,7 @@ class ReactAgent:
             display = missing.get("display_name", subject)
             content = online_result
             if missing.get("abstract"):
-                content = f"摘要：{missing['abstract'][:300]}\n\n{content}"
+                content = f"摘要：{missing['abstract']}\n\n{content}"
             yield from self._generate_answer_from_chunks(
                 [], query, Intent.QA, max_chunks=15, max_tokens=5000,
                 memory_context=self._build_memory_context(query),
@@ -701,7 +701,7 @@ class ReactAgent:
             # 有摘要 → 跳过在线检索，直接使用预存元数据
             display = missing.get("display_name", subject)
             logger.info(f"[QA] kb_missing有摘要，跳过在线检索: {display}")
-            content = f"摘要：{missing['abstract'][:500]}"
+            content = f"摘要：{missing['abstract']}"
             if missing.get("url"):
                 content += f"\n链接：{missing['url']}"
             if missing.get("authors"):
@@ -775,7 +775,7 @@ class ReactAgent:
             display = missing.get("display_name", subject)
             if missing.get("abstract"):
                 logger.info(f"[Compare] {subject} kb_missing有摘要，跳过在线检索")
-                content = f"摘要：{missing['abstract'][:500]}"
+                content = f"摘要：{missing['abstract']}"
                 if missing.get("url"):
                     content += f"\n链接：{missing['url']}"
                 if missing.get("authors"):

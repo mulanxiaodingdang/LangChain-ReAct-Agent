@@ -227,8 +227,7 @@ def fetch_paper_metadata(title: str) -> str:
     if best.url:
         lines.append(f"链接: {best.url}")
     if best.abstract:
-        abstract = best.abstract[:500].strip()
-        lines.append(f"摘要: {abstract}...")
+        lines.append(f"摘要: {best.abstract}")
     if best.citation_count:
         lines.append(f"引用数: {best.citation_count}")
 
@@ -314,7 +313,7 @@ def compare_papers(titles_str: str) -> str:
             p = papers[0]
             results.append(f"[在线] {p.title} | {', '.join(p.authors[:3]) if p.authors else ''} | {p.year} | {p.source}")
             if p.abstract:
-                results.append(f"  摘要: {p.abstract[:200]}...")
+                results.append(f"  摘要: {p.abstract}")
 
     result = "\n".join(results)
     _log_tool_result("compare_papers", result, start)
