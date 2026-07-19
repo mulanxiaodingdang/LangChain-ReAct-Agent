@@ -94,7 +94,7 @@
 ### 环境要求
 
 - **Python** ≥ 3.10
-- **SiliconFlow API Key**（[硅基流动](https://cloud.siliconflow.cn/account/ak) 申请）
+- **OpenAI 兼容 API**（SiliconFlow / DeepSeek / OpenAI / vLLM 等任一即可）
 
 ### 1. 克隆仓库
 
@@ -109,11 +109,53 @@ cd LangChain-ReAct-Agent
 pip install -r requirements.txt
 ```
 
-### 3. 配置 API Key
+### 3. 配置环境变量
 
 ```bash
-export SILICONFLOW_API_KEY="your-api-key"
+cp .env.example .env
+# 编辑 .env，填入 API Key 等信息
 ```
+
+系统通过 OpenAI 兼容 API 调用 LLM 和 Embedding 模型，支持任意兼容服务商。
+
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `LLM_MODEL` | 对话模型名称 | `deepseek-ai/DeepSeek-V3.2` |
+| `LLM_BASE_URL` | LLM API 地址 | `https://api.siliconflow.cn/v1` |
+| `LLM_API_KEY` | LLM API 密钥 | — |
+| `EMBED_MODEL` | Embedding 模型名称 | `BAAI/bge-m3` |
+| `EMBED_BASE_URL` | Embedding API 地址 | `https://api.siliconflow.cn/v1` |
+| `EMBED_API_KEY` | Embedding API 密钥 | — |
+| `LLM_TIMEOUT` | 调用超时（秒） | `120` |
+| `LLM_MAX_RETRIES` | 最大重试次数 | `3` |
+
+LLM 和 Embedding 可分别使用不同的服务商。模型名称需与对应 API 支持的名称一致。
+
+**常见配置示例：**
+
+```bash
+# SiliconFlow（默认）
+LLM_MODEL=deepseek-ai/DeepSeek-V3.2
+LLM_BASE_URL=https://api.siliconflow.cn/v1
+LLM_API_KEY=sk-xxxxxxxxxxxxxxxx
+
+# DeepSeek 官方 API
+LLM_MODEL=deepseek-chat
+LLM_BASE_URL=https://api.deepseek.com
+LLM_API_KEY=sk-xxxxxxxxxxxxxxxx
+
+# OpenAI 官方 API
+LLM_MODEL=gpt-4o
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=sk-xxxxxxxxxxxxxxxx
+
+# 本地 vLLM / Ollama
+LLM_MODEL=qwen2.5-72b
+LLM_BASE_URL=http://localhost:8000/v1
+LLM_API_KEY=not-needed
+```
+
+向后兼容：未设置上述变量时，系统会自动回退读取 `SILICONFLOW_API_KEY` 环境变量和 `config/rag.yml` 中的模型名。
 
 ### 4. 初始化知识库
 
