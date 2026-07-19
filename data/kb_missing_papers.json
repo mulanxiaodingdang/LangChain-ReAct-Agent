@@ -481,44 +481,6 @@
       "verified": false,
       "added_at": "2026-07-15T16:00:51.086747"
     },
-    "flippedrag: black-box opinion manipulation adversarial attacks to retrieval-augmented generation models": {
-      "display_name": "FlippedRAG: Black-Box Opinion Manipulation Adversarial Attacks to Retrieval-Augmented Generation Models",
-      "online_query": "FlippedRAG: Black-Box Opinion Manipulation Adversarial Attacks to Retrieval-Augmented Generation Models",
-      "authors": [
-        "Zhuo Chen",
-        "Yuyang Gong",
-        "Jiawei Liu",
-        "Miaokun Chen",
-        "Haotan Liu",
-        "Qikai Cheng",
-        "Fan Zhang",
-        "Wei Lu",
-        "Xiaozhong Liu"
-      ],
-      "year": "2025",
-      "venue": "Proceedings of the 2025 ACM SIGSAC Conference on Computer and Communications Security",
-      "doi": "10.1145/3719027.3765023",
-      "url": "http://arxiv.org/abs/2501.02968v6",
-      "abstract": "",
-      "status": "auto_indexed",
-      "verified": false,
-      "added_at": "2026-07-15T16:07:54.849281"
-    },
-    "flippedrag: black-box opinion manipulation attacks to retrieval-augmented generation of large language models.": {
-      "display_name": "FlippedRAG: Black-Box Opinion Manipulation Attacks to Retrieval-Augmented Generation of Large Language Models.",
-      "online_query": "FlippedRAG: Black-Box Opinion Manipulation Attacks to Retrieval-Augmented Generation of Large Language Models.",
-      "authors": [
-        "Zhuo Chen"
-      ],
-      "year": "2025",
-      "venue": "Zenodo",
-      "doi": "",
-      "url": "https://doi.org/10.5281/zenodo.17036325",
-      "abstract": "",
-      "status": "auto_indexed",
-      "verified": false,
-      "added_at": "2026-07-15T16:07:54.849703"
-    },
     "ai-augmented soc: a survey of llms and agents for security automation.": {
       "display_name": "AI-Augmented SOC: A Survey of LLMs and Agents for Security Automation.",
       "online_query": "AI-Augmented SOC: A Survey of LLMs and Agents for Security Automation.",

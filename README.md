@@ -117,11 +117,21 @@ export SILICONFLOW_API_KEY="your-api-key"
 
 ### 4. 初始化知识库
 
-将论文 PDF 或 TXT 文件放入 `data/` 目录，然后执行：
+将论文 PDF 或 TXT 文件放入 `data/` 目录，然后依次执行：
+
+**Step 1 — 入库**：从 `data/` 读取 PDF/TXT，结构化解析、分块、MD5 去重后写入 Chroma 向量库。
 
 ```bash
 python -c "from rag.vector_store import VectorStoreService; VectorStoreService().load_document()"
 ```
+
+**Step 2 — 建索引**：从 Chroma 向量库读取全部文档，构建 BM25 关键词索引 + 缩写索引 + 文档清单（混合检索需要）。
+
+```bash
+python -c "from rag.rag_service import RagSummarizeService; RagSummarizeService().rebuild_bm25_index()"
+```
+
+> 每次新增或替换 `data/` 目录下的论文文件后，都需要重新执行以上两步。缺少 Step 2 会导致混合检索退化为纯向量检索。
 
 ### 5. 启动应用
 
